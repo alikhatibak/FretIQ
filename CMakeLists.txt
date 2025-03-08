@@ -28,8 +28,14 @@ target_include_directories(FretIQ PRIVATE ${JUCE_DIR}/include/JUCE-8.0.6/modules
 
 # Link JUCE modules
 target_link_libraries(FretIQ PRIVATE
-    juce::juce_gui_basics
     juce::juce_audio_basics
+    juce::juce_audio_devices
+    juce::juce_audio_utils
+    juce::juce_gui_basics
+    juce::juce_events
+    juce::juce_graphics
+    juce::juce_data_structures
+    juce::juce_core
     juce::juce_audio_devices
 )
 
