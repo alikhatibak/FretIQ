@@ -121,16 +121,20 @@ void MainComponent::getNextAudioBlock(
 
   // Update aubio state with the new buffer.
   float pitch = detectPitch();
+  if (pitch > 0) {
+    int midiNote = frequencyToMidiNoteNumber(pitch);
+    auto noteName = midiNoteNumberToNoteName(midiNote);
 
-  // Use a static counter to output logs every 50 buffers.
-  static int logCounter = 0;
-  if (++logCounter >= 50) {
-    logCounter = 0;
-    // Log the computed values.
-    juce::Logger::writeToLog("[FretIQ] - Peak: " + juce::String(peak) +
-                             " | RMS: " + juce::String(rms) +
-                             " | Detected Pitch: " + juce::String(pitch) +
-                             " Hz");
+    // Use a static counter to output logs every 50 buffers.
+    static int logCounter = 0;
+    if (++logCounter >= 25) {
+      logCounter = 0;
+      // Log the computed values.
+      juce::Logger::writeToLog("[FretIQ] - Peak: " + juce::String(peak) +
+                               " | RMS: " + juce::String(rms) +
+                               " | Detected Pitch: " + juce::String(pitch) +
+                               " Hz (" + juce::String(noteName) + ")");
+    }
   }
 }
 
@@ -162,4 +166,21 @@ float MainComponent::detectPitch() {
   aubio_pitch_do(aubioPitch, aubioInputBuffer, aubioOutputBuffer);
   float pitch = fvec_get_sample(aubioOutputBuffer, 0);
   return pitch;
+}
+
+int MainComponent::frequencyToMidiNoteNumber(float frequencyHz) const {
+  return juce::roundToInt(12.0f * std::log2(frequencyHz / 440.0f) + 69.0f);
+}
+
+juce::String MainComponent::midiNoteNumberToNoteName(int midiNoteNumber) const {
+  static const juce::StringArray noteNames = {
+      "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+  int noteIndex = midiNoteNumber % 12;
+  int octaveNumber = (midiNoteNumber / 12) - 1;
+  return noteNames[noteNames.size() > 0
+                       ? noteNames.indexOf(noteNames[noteNames.size() > 0
+                                                         ? midiNoteNumber % 12
+                                                         : 0])
+                       : 0] +
+         juce::String(octaveNumber);
 }

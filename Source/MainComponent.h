@@ -1,5 +1,6 @@
 #pragma once
 
+#include "juce_core/juce_core.h"
 #include <JuceHeader.h>
 
 // Include Aubio headers (make sure these are in your include path)
@@ -52,5 +53,7 @@ private:
   void initializeAubio();
   // Processes the aubio pitch detection and returns the detected pitch.
   float detectPitch();
+  // Added note detection methods.
+  int frequencyToMidiNoteNumber(float frequencyHZ) const;
+  juce::String midiNoteNumberToNoteName(int midiNoteNumber) const;
 };
-
