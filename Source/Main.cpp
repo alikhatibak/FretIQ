@@ -1,5 +1,9 @@
 #include "MainComponent.h"
 #include <JuceHeader.h>
+#include <_inttypes.h>
+#include <_types.h>
+#include <aubio/fvec.h>
+#include <aubio/types.h>
 
 class MainWindow : public juce::DocumentWindow {
 public:

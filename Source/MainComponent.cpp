@@ -1,18 +1,36 @@
 #include "MainComponent.h"
-#include "aubio/fvec.h"
-#include "aubio/pitch/pitch.h"
-#include "juce_audio_basics/juce_audio_basics.h"
-#include "juce_core/juce_core.h"
-#include "juce_graphics/juce_graphics.h"
+
+// Include Aubio headers
+extern "C" {
+#include <aubio/aubio.h>
+#include <aubio/fvec.h>
+#include <aubio/pitch/pitch.h>
+#include <aubio/types.h>
+}
+
 #include <algorithm>
 #include <cstdlib>
 #include <vector>
 
+#include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
+#include "juce_graphics/juce_graphics.h"
+
+//==============================================================================
 MainComponent::MainComponent() {
   setSize(800, 600);
   setWantsKeyboardFocus(true);
   startTimer(1000);
+
+  // Set up the audio channels (1 input, 0 outputs)
   setAudioChannels(1, 0);
+
+  // Initialize our circular audio buffer with the proper size.
+  audioBuffer.resize(bufferSize);
+  bufferIndex = 0;
+
+  // Initialize aubio pitch detection.
+  initializeAubio();
 }
 
 MainComponent::~MainComponent() { shutdownAudio(); }
@@ -53,24 +71,26 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected,
 void MainComponent::releaseResources() {
   juce::Logger::writeToLog("[FretIQ] - Audio Released.");
 }
-/*Previous function that would output every sample: */
 
-/*void MainComponent::getNextAudioBlock(*/
-/*    const juce::AudioSourceChannelInfo &bufferToFill) {*/
-/*  auto *inputChannelData = bufferToFill.buffer->getReadPointer(0);*/
-/*  juce::Logger::writeToLog("Sample: " + juce::String(inputChannelData[0]));*/
-/*  bufferToFill.clearActiveBufferRegion();*/
-/*}*/
-
+/*
+  Updated getNextAudioBlock function:
+  - Calculates peak and RMS values and logs them periodically.
+  - Copies the incoming audio into our circular buffer safely.
+  - Fills the aubio input buffer only up to its allocated length (hop size)
+    and pads any remaining space with zeros.
+  - Calls detectPitch() to process the aubio input buffer for pitch detection.
+*/
 void MainComponent::getNextAudioBlock(
     const juce::AudioSourceChannelInfo &bufferToFill) {
+  // Get a pointer to the incoming audio data.
   auto *channelData = bufferToFill.buffer->getReadPointer(0);
   const int numSamples = bufferToFill.numSamples;
 
-  static int logCounter = 0;
+  // Variables for computing the peak and RMS.
   float peak = 0.0f;
   float sum = 0.0f;
 
+  // Process each sample in the incoming buffer.
   for (int i = 0; i < numSamples; ++i) {
     float sample = channelData[i];
     sum += sample * sample;
@@ -78,44 +98,68 @@ void MainComponent::getNextAudioBlock(
       peak = std::abs(sample);
   }
 
+  // Calculate RMS for the current buffer.
   float rms = std::sqrt(sum / numSamples);
-  if (++logCounter >= 50) {
-    logCounter = 0;
-    /*DBG("Peak: " << peak << " | RMS: " << rms);*/
-    juce::Logger::writeToLog("[FretIQ] - Peak: " + juce::String(peak) +
-                             " | RMS: " + juce::String(rms));
-  }
 
-  for (int i = 0; i < bufferToFill.numSamples; ++i) {
+  // Copy incoming samples into the circular audio buffer.
+  for (int i = 0; i < numSamples; ++i) {
     audioBuffer[bufferIndex] = channelData[i];
     bufferIndex = (bufferIndex + 1) % bufferSize;
   }
-}
 
-std::vector<float> MainComponent::getLatestAudioBlock() {
-  std::vector<float> block(bufferSize);
-  int firstChuckSize =
-      std::min(bufferSize, (int)audioBuffer.size() - bufferIndex);
-  std::copy(audioBuffer.begin() + bufferIndex,
-            audioBuffer.begin() + bufferIndex + firstChuckSize, block.begin());
-  if (firstChuckSize < bufferSize) {
-    std::copy(audioBuffer.begin() + (bufferSize - firstChuckSize),
-              block.begin() + firstChuckSize);
+  // Fill the aubio input buffer safely.
+  int aubioBufferLength = aubioInputBuffer->length; // e.g., 512 samples
+  int samplesToProcess = std::min(numSamples, aubioBufferLength);
+
+  for (int i = 0; i < samplesToProcess; ++i) {
+    fvec_set_sample(aubioInputBuffer, channelData[i], i);
   }
-  return block;
+  // Zero-pad any remaining samples if numSamples < aubioBufferLength.
+  for (int i = samplesToProcess; i < aubioBufferLength; ++i) {
+    fvec_set_sample(aubioInputBuffer, 0.0f, i);
+  }
+
+  // Update aubio state with the new buffer.
+  float pitch = detectPitch();
+
+  // Use a static counter to output logs every 50 buffers.
+  static int logCounter = 0;
+  if (++logCounter >= 50) {
+    logCounter = 0;
+    // Log the computed values.
+    juce::Logger::writeToLog("[FretIQ] - Peak: " + juce::String(peak) +
+                             " | RMS: " + juce::String(rms) +
+                             " | Detected Pitch: " + juce::String(pitch) +
+                             " Hz");
+  }
 }
 
 void MainComponent::resized() {}
 
+// Initialize Aubio for pitch detection.
 void MainComponent::initializeAubio() {
-  int bufferSize = 1024;
-  int hopSize = 512;
+  // Define buffer sizes for aubio pitch detection.
+  int bufferSizeAubio = 1024; // Used for initializing aubio_pitch
+  int hopSize = 512;          // Number of samples per aubio processing block
   float sampleRate = 44100.0f;
-  aubioPitch = new_aubio_pitch("yin", bufferSize, hopSize, sampleRate);
+
+  // Create the aubio pitch detection object using the "yin" algorithm.
+  aubioPitch = new_aubio_pitch("yin", bufferSizeAubio, hopSize, sampleRate);
   if (!aubioPitch) {
     juce::Logger::writeToLog("[FretIQ] - Failed to initialize Aubio!");
     return;
   }
-  aubio_pitch_set_tolerance(aubioPitch, (float)0.8);
+  // Set the tolerance parameter (adjust if needed).
+  aubio_pitch_set_tolerance(aubioPitch, (smpl_t)0.8f);
+
+  // Allocate the input and output vectors for aubio.
   aubioInputBuffer = new_fvec(hopSize);
+  aubioOutputBuffer = new_fvec(1);
+}
+
+// Perform the pitch detection operation using aubio.
+float MainComponent::detectPitch() {
+  aubio_pitch_do(aubioPitch, aubioInputBuffer, aubioOutputBuffer);
+  float pitch = fvec_get_sample(aubioOutputBuffer, 0);
+  return pitch;
 }

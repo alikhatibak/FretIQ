@@ -9,9 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(JUCE_DIR "/Users/alikhatibak/JUCE/install")
 find_package(JUCE CONFIG REQUIRED PATHS ${JUCE_DIR})
 
-# Aubio
-
-# Define a JUCE GUI application
+# Define a JUCE GUI application **before linking libraries**
 juce_add_gui_app(FretIQ
     PRODUCT_NAME "FretIQ"
 )
@@ -28,6 +26,15 @@ target_sources(FretIQ PRIVATE
 # Include JUCE headers
 target_include_directories(FretIQ PRIVATE ${JUCE_DIR}/include/JUCE-8.0.6/modules)
 
+# --- AUBIO CONFIGURATION ---
+set(AUBIO_ROOT /opt/homebrew/opt/aubio)
+set(AUBIO_INCLUDE_DIR ${AUBIO_ROOT}/include)
+set(AUBIO_LIB_DIR ${AUBIO_ROOT}/lib)
+
+# Ensure CMake knows where to find Aubio
+target_include_directories(FretIQ PRIVATE ${AUBIO_INCLUDE_DIR})
+target_link_directories(FretIQ PRIVATE ${AUBIO_LIB_DIR})
+
 # Link JUCE modules
 target_link_libraries(FretIQ PRIVATE
     juce::juce_audio_basics
@@ -41,8 +48,6 @@ target_link_libraries(FretIQ PRIVATE
     juce::juce_audio_devices
 )
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(AUBIO REQUIRED aubio)
-target_include_directories(FretIQ PRIVATE ${AUBIO_INCLUDE_DIRS})
-target_link_libraries(FretIQ PRIVATE ${AUBIO_LIBRARIES})
+# Link Aubio after defining FretIQ
+target_link_libraries(FretIQ PRIVATE aubio)
 
