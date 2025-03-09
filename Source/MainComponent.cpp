@@ -16,6 +16,10 @@ extern "C" {
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 
+#define COLOR_CYAN "\033[32m"
+#define COLOR_GREEN "\033[36m"
+#define COLOR_RESET "\033[35m"
+
 //==============================================================================
 MainComponent::MainComponent() {
   setSize(800, 600);
@@ -48,28 +52,32 @@ void MainComponent::paint(juce::Graphics &g) {
 
 void MainComponent::mouseDown(const juce::MouseEvent &event) {
   juce::Logger::writeToLog(
-      "[FretIQ] - Mouse clicked at: " + juce::String(event.x) + ", " +
-      juce::String(event.y));
+      COLOR_CYAN "[FretIQ]" COLOR_RESET " - Mouse clicked at: " +
+      juce::String(event.x) + ", " + juce::String(event.y));
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress &key) {
-  juce::Logger::writeToLog("[FretIQ] - Key pressed: " +
+  juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
+                                      " - Key pressed: " +
                            juce::String(key.getTextCharacter()));
   return true;
 }
 
 void MainComponent::timerCallback() {
-  juce::Logger::writeToLog("[FretIQ] - Timer triggered: Updating...");
+  juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
+                                      " - Timer triggered: Updating...");
 }
 
 void MainComponent::prepareToPlay(int samplesPerBlockExpected,
                                   double sampleRate) {
-  juce::Logger::writeToLog("[FretIQ] - Audio Initialized. Sample Rate: " +
+  juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
+                                      " - Audio Initialized. Sample Rate: " +
                            juce::String(sampleRate));
 }
 
 void MainComponent::releaseResources() {
-  juce::Logger::writeToLog("[FretIQ] - Audio Released.");
+  juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
+                                      " - Audio Released.");
 }
 
 /*
@@ -130,10 +138,12 @@ void MainComponent::getNextAudioBlock(
     if (++logCounter >= 25) {
       logCounter = 0;
       // Log the computed values.
-      juce::Logger::writeToLog("[FretIQ] - Peak: " + juce::String(peak) +
-                               " | RMS: " + juce::String(rms) +
-                               " | Detected Pitch: " + juce::String(pitch) +
-                               " Hz (" + juce::String(noteName) + ")");
+      juce::Logger::writeToLog(
+          COLOR_CYAN "[FretIQ]" COLOR_RESET " - Detected: " COLOR_GREEN +
+          juce::String::formatted("%6.2f Hz", pitch) + COLOR_RESET +
+          " | Note: " COLOR_GREEN + noteName + COLOR_RESET +
+          " | RMS: " + juce::String::formatted("%.3f", rms) +
+          " | Peak: " + juce::String::formatted("%6.2f", peak));
     }
   }
 }
@@ -150,7 +160,8 @@ void MainComponent::initializeAubio() {
   // Create the aubio pitch detection object using the "yin" algorithm.
   aubioPitch = new_aubio_pitch("yin", bufferSizeAubio, hopSize, sampleRate);
   if (!aubioPitch) {
-    juce::Logger::writeToLog("[FretIQ] - Failed to initialize Aubio!");
+    juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
+                                        " - Failed to initialize Aubio!");
     return;
   }
   // Set the tolerance parameter (adjust if needed).
