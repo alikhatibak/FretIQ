@@ -53,6 +53,7 @@ private:
   void initializeAubio();
   // Processes the aubio pitch detection and returns the detected pitch.
   float detectPitch();
+  int targetMidiNote = 60; // Midi Middle C
   // Added note detection methods.
   int frequencyToMidiNoteNumber(float frequencyHZ) const;
   juce::String midiNoteNumberToNoteName(int midiNoteNumber) const;

@@ -19,6 +19,8 @@ extern "C" {
 #define COLOR_CYAN "\033[32m"
 #define COLOR_GREEN "\033[36m"
 #define COLOR_RESET "\033[35m"
+#define COLOR_CORRECT "\033[38;2;144;238;144m"  // Pastel Lime Green
+#define COLOR_INCORRECT "\033[38;2;255;105;97m" // Soft Pure Red
 
 //==============================================================================
 MainComponent::MainComponent() {
@@ -132,10 +134,25 @@ void MainComponent::getNextAudioBlock(
   if (pitch > 0) {
     int midiNote = frequencyToMidiNoteNumber(pitch);
     auto noteName = midiNoteNumberToNoteName(midiNote);
+    bool isCorrect = (midiNote == targetMidiNote);
+    if (isCorrect) {
+      juce::Logger::writeToLog(COLOR_CYAN
+                               "[Fret IQ]" COLOR_RESET " - " COLOR_CORRECT
+                               " Correct! " COLOR_RESET
+                               "You played the correct note, " COLOR_CORRECT +
+                               noteName);
+    } else {
+      juce::Logger::writeToLog(
+          COLOR_CYAN "[Fret IQ]" COLOR_RESET " - " COLOR_INCORRECT
+                     " Try Again! " COLOR_RESET
+                     "You played a " COLOR_INCORRECT +
+          noteName + COLOR_RESET " instead of a " COLOR_CORRECT +
+          midiNoteNumberToNoteName(targetMidiNote));
+    }
 
     // Use a static counter to output logs every 50 buffers.
     static int logCounter = 0;
-    if (++logCounter >= 25) {
+    if (++logCounter >= 5) {
       logCounter = 0;
       // Log the computed values.
       juce::Logger::writeToLog(
