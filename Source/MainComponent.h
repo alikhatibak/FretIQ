@@ -54,6 +54,12 @@ private:
   // Processes the aubio pitch detection and returns the detected pitch.
   float detectPitch();
   int targetMidiNote = 60; // Midi Middle C
+  int stableFrameCount = 0;
+  static constexpr float requiredStableFrames = 5;
+  static constexpr float rmsThreshold = 0.02f;
+  static constexpr float pitchConfidenceThreshold = 0.8f;
+
+  void setRandomTargetNote();
   // Added note detection methods.
   int frequencyToMidiNoteNumber(float frequencyHZ) const;
   juce::String midiNoteNumberToNoteName(int midiNoteNumber) const;

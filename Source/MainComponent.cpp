@@ -10,6 +10,7 @@ extern "C" {
 
 #include <algorithm>
 #include <cstdlib>
+#include <random>
 #include <vector>
 
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -111,6 +112,11 @@ void MainComponent::getNextAudioBlock(
   // Calculate RMS for the current buffer.
   float rms = std::sqrt(sum / numSamples);
 
+  if (rms < rmsThreshold) {
+    stableFrameCount = 0;
+    return;
+  }
+
   // Copy incoming samples into the circular audio buffer.
   for (int i = 0; i < numSamples; ++i) {
     audioBuffer[bufferIndex] = channelData[i];
@@ -131,17 +137,25 @@ void MainComponent::getNextAudioBlock(
 
   // Update aubio state with the new buffer.
   float pitch = detectPitch();
-  if (pitch > 0) {
+  float confidence = aubio_pitch_get_confidence(aubioPitch);
+  if (pitch > 0 && confidence >= pitchConfidenceThreshold) {
     int midiNote = frequencyToMidiNoteNumber(pitch);
     auto noteName = midiNoteNumberToNoteName(midiNote);
+
     bool isCorrect = (midiNote == targetMidiNote);
     if (isCorrect) {
-      juce::Logger::writeToLog(COLOR_CYAN
-                               "[Fret IQ]" COLOR_RESET " - " COLOR_CORRECT
-                               " Correct! " COLOR_RESET
-                               "You played the correct note, " COLOR_CORRECT +
-                               noteName);
+      stableFrameCount++;
+      if (stableFrameCount >= requiredStableFrames) {
+
+        juce::Logger::writeToLog(COLOR_CYAN
+                                 "[Fret IQ]" COLOR_RESET " - " COLOR_CORRECT
+                                 " Correct! " COLOR_RESET
+                                 "You played the correct note, " COLOR_CORRECT +
+                                 noteName);
+        setRandomTargetNote();
+      }
     } else {
+      stableFrameCount = 0;
       juce::Logger::writeToLog(
           COLOR_CYAN "[Fret IQ]" COLOR_RESET " - " COLOR_INCORRECT
                      " Try Again! " COLOR_RESET
@@ -211,4 +225,15 @@ juce::String MainComponent::midiNoteNumberToNoteName(int midiNoteNumber) const {
                                                          : 0])
                        : 0] +
          juce::String(octaveNumber);
+}
+
+void MainComponent::setRandomTargetNote() {
+  static std::random_device rand;
+  static std::mt19937 gen(rand());
+  static std::uniform_int_distribution<int> noteDist(40, 88);
+
+  targetMidiNote = noteDist(gen);
+  juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
+                                      " - New Target Note: " COLOR_CYAN +
+                           midiNoteNumberToNoteName(targetMidiNote));
 }
