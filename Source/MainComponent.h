@@ -55,7 +55,9 @@ private:
   float detectPitch();
   int targetMidiNote = 60; // Midi Middle C
   int stableFrameCount = 0;
+  int incorrectFrameCount = 0;
   static constexpr float requiredStableFrames = 5;
+  static constexpr float requiredIncorrectFrames = 20;
   static constexpr float rmsThreshold = 0.02f;
   static constexpr float pitchConfidenceThreshold = 0.8f;
 

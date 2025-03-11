@@ -114,6 +114,7 @@ void MainComponent::getNextAudioBlock(
 
   if (rms < rmsThreshold) {
     stableFrameCount = 0;
+    incorrectFrameCount = 0;
     return;
   }
 
@@ -145,6 +146,7 @@ void MainComponent::getNextAudioBlock(
     bool isCorrect = (midiNote == targetMidiNote);
     if (isCorrect) {
       stableFrameCount++;
+      incorrectFrameCount = 0;
       if (stableFrameCount >= requiredStableFrames) {
 
         juce::Logger::writeToLog(COLOR_CYAN
@@ -153,20 +155,25 @@ void MainComponent::getNextAudioBlock(
                                  "You played the correct note, " COLOR_CORRECT +
                                  noteName);
         setRandomTargetNote();
+        stableFrameCount = 0;
       }
     } else {
       stableFrameCount = 0;
-      juce::Logger::writeToLog(
-          COLOR_CYAN "[Fret IQ]" COLOR_RESET " - " COLOR_INCORRECT
-                     " Try Again! " COLOR_RESET
-                     "You played a " COLOR_INCORRECT +
-          noteName + COLOR_RESET " instead of a " COLOR_CORRECT +
-          midiNoteNumberToNoteName(targetMidiNote));
+      incorrectFrameCount++;
+      if (incorrectFrameCount >= requiredIncorrectFrames) {
+        juce::Logger::writeToLog(
+            COLOR_CYAN "[Fret IQ]" COLOR_RESET " - " COLOR_INCORRECT
+                       " Try Again! " COLOR_RESET
+                       "You played a " COLOR_INCORRECT +
+            noteName + COLOR_RESET " instead of a " COLOR_CORRECT +
+            midiNoteNumberToNoteName(targetMidiNote));
+        incorrectFrameCount = 0;
+      }
     }
 
     // Use a static counter to output logs every 50 buffers.
     static int logCounter = 0;
-    if (++logCounter >= 5) {
+    if (++logCounter >= 50) {
       logCounter = 0;
       // Log the computed values.
       juce::Logger::writeToLog(
