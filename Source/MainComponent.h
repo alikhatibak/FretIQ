@@ -65,4 +65,10 @@ private:
   // Added note detection methods.
   int frequencyToMidiNoteNumber(float frequencyHZ) const;
   juce::String midiNoteNumberToNoteName(int midiNoteNumber) const;
+  juce::String targetNoteText = "Target: C4";
+  juce::String detectedNoteText = "You played: -";
+  juce::String feedbackText = "";
+  void updateUI();
+  bool isWaitingForNewNote = false;
+  void startNoteChangeDelay();
 };

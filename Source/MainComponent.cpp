@@ -27,7 +27,7 @@ extern "C" {
 MainComponent::MainComponent() {
   setSize(800, 600);
   setWantsKeyboardFocus(true);
-  startTimer(1000);
+  /*startTimer(1000);*/
 
   // Set up the audio channels (1 input, 0 outputs)
   setAudioChannels(1, 0);
@@ -49,7 +49,15 @@ void MainComponent::shutdownAudio() {
 void MainComponent::paint(juce::Graphics &g) {
   g.fillAll(juce::Colours::black);
   g.setColour(juce::Colours::white);
-  g.drawText("Welcome to FretIQ!", getLocalBounds(),
+  /*g.drawText("Welcome to FretIQ!", getLocalBounds(),*/
+  /*           juce::Justification::centred, true);*/
+  g.drawText(targetNoteText, getLocalBounds().withHeight(100),
+             juce::Justification::centred, true);
+  g.drawText(detectedNoteText, getLocalBounds().withTrimmedTop(100),
+             juce::Justification::centred, true);
+  g.setColour(feedbackText.contains("+") ? juce::Colours::limegreen
+                                         : juce::Colours::red);
+  g.drawText(feedbackText, getLocalBounds().withTrimmedTop(200).withHeight(100),
              juce::Justification::centred, true);
 }
 
@@ -67,6 +75,9 @@ bool MainComponent::keyPressed(const juce::KeyPress &key) {
 }
 
 void MainComponent::timerCallback() {
+  stopTimer();
+  setRandomTargetNote();
+  isWaitingForNewNote = false;
   juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
                                       " - Timer triggered: Updating...");
 }
@@ -142,25 +153,30 @@ void MainComponent::getNextAudioBlock(
   if (pitch > 0 && confidence >= pitchConfidenceThreshold) {
     int midiNote = frequencyToMidiNoteNumber(pitch);
     auto noteName = midiNoteNumberToNoteName(midiNote);
+    detectedNoteText = "You played: " + noteName;
 
     bool isCorrect = (midiNote == targetMidiNote);
     if (isCorrect) {
       stableFrameCount++;
       incorrectFrameCount = 0;
       if (stableFrameCount >= requiredStableFrames) {
-
+        feedbackText = "+ Correct!";
         juce::Logger::writeToLog(COLOR_CYAN
                                  "[Fret IQ]" COLOR_RESET " - " COLOR_CORRECT
                                  " Correct! " COLOR_RESET
                                  "You played the correct note, " COLOR_CORRECT +
                                  noteName);
-        setRandomTargetNote();
+        isWaitingForNewNote = true;
+        startNoteChangeDelay();
+        /*setRandomTargetNote();*/
         stableFrameCount = 0;
+        updateUI();
       }
     } else {
       stableFrameCount = 0;
       incorrectFrameCount++;
       if (incorrectFrameCount >= requiredIncorrectFrames) {
+        feedbackText = "! Try Again!";
         juce::Logger::writeToLog(
             COLOR_CYAN "[Fret IQ]" COLOR_RESET " - " COLOR_INCORRECT
                        " Try Again! " COLOR_RESET
@@ -184,6 +200,7 @@ void MainComponent::getNextAudioBlock(
           " | Peak: " + juce::String::formatted("%6.2f", peak));
     }
   }
+  repaint();
 }
 
 void MainComponent::resized() {}
@@ -223,7 +240,7 @@ int MainComponent::frequencyToMidiNoteNumber(float frequencyHz) const {
 
 juce::String MainComponent::midiNoteNumberToNoteName(int midiNoteNumber) const {
   static const juce::StringArray noteNames = {
-      "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+      "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ", "G#", "A ", "A#", "B "};
   int noteIndex = midiNoteNumber % 12;
   int octaveNumber = (midiNoteNumber / 12) - 1;
   return noteNames[noteNames.size() > 0
@@ -243,4 +260,10 @@ void MainComponent::setRandomTargetNote() {
   juce::Logger::writeToLog(COLOR_CYAN "[FretIQ]" COLOR_RESET
                                       " - New Target Note: " COLOR_CYAN +
                            midiNoteNumberToNoteName(targetMidiNote));
+  updateUI();
 }
+void MainComponent::updateUI() {
+  targetNoteText = "Target: " + midiNoteNumberToNoteName(targetMidiNote);
+  repaint();
+}
+void MainComponent::startNoteChangeDelay() { startTimer(2000); }
