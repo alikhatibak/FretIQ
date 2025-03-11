@@ -162,7 +162,7 @@ void MainComponent::getNextAudioBlock(
       if (stableFrameCount >= requiredStableFrames) {
         feedbackText = "+ Correct!";
         juce::Logger::writeToLog(COLOR_CYAN
-                                 "[Fret IQ]" COLOR_RESET " - " COLOR_CORRECT
+                                 "[FretIQ]" COLOR_RESET " - " COLOR_CORRECT
                                  " Correct! " COLOR_RESET
                                  "You played the correct note, " COLOR_CORRECT +
                                  noteName);
@@ -178,7 +178,7 @@ void MainComponent::getNextAudioBlock(
       if (incorrectFrameCount >= requiredIncorrectFrames) {
         feedbackText = "! Try Again!";
         juce::Logger::writeToLog(
-            COLOR_CYAN "[Fret IQ]" COLOR_RESET " - " COLOR_INCORRECT
+            COLOR_CYAN "[FretIQ]" COLOR_RESET " - " COLOR_INCORRECT
                        " Try Again! " COLOR_RESET
                        "You played a " COLOR_INCORRECT +
             noteName + COLOR_RESET " instead of a " COLOR_CORRECT +
