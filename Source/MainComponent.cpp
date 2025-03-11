@@ -163,7 +163,7 @@ void MainComponent::getNextAudioBlock(
         feedbackText = "+ Correct!";
         juce::Logger::writeToLog(COLOR_CYAN
                                  "[FretIQ]" COLOR_RESET " - " COLOR_CORRECT
-                                 " Correct! " COLOR_RESET
+                                 "Correct! " COLOR_RESET
                                  "You played the correct note, " COLOR_CORRECT +
                                  noteName);
         isWaitingForNewNote = true;
@@ -179,7 +179,7 @@ void MainComponent::getNextAudioBlock(
         feedbackText = "! Try Again!";
         juce::Logger::writeToLog(
             COLOR_CYAN "[FretIQ]" COLOR_RESET " - " COLOR_INCORRECT
-                       " Try Again! " COLOR_RESET
+                       "Try Again! " COLOR_RESET
                        "You played a " COLOR_INCORRECT +
             noteName + COLOR_RESET " instead of a " COLOR_CORRECT +
             midiNoteNumberToNoteName(targetMidiNote));
@@ -240,7 +240,7 @@ int MainComponent::frequencyToMidiNoteNumber(float frequencyHz) const {
 
 juce::String MainComponent::midiNoteNumberToNoteName(int midiNoteNumber) const {
   static const juce::StringArray noteNames = {
-      "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ", "G#", "A ", "A#", "B "};
+      "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
   int noteIndex = midiNoteNumber % 12;
   int octaveNumber = (midiNoteNumber / 12) - 1;
   return noteNames[noteNames.size() > 0
