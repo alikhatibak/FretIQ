@@ -1,16 +1,3 @@
-# FretIQ 🎸 
-### The Smarter Guitar Practice App!
----
-
-FretIQ is a project meant to develop Fretboard Familiarity and build an intuition around navigating the neck of your guitar. Think of is as the monkeytype for guitar!
-
-### Features:
-    - Pitch Detection
-    - Random Note Prompting
-    - Statistics and Performance Metrics
-    - Multiple Test Modes
-    - Built in Tuner
-
 # FretIQ 🎸
 
 ### **The Smarter Guitar Practice App!**
@@ -22,8 +9,8 @@ Whether you're a **beginner** looking to memorize notes or an **advanced player*
 - ✅ Pitch Detection – Uses your microphone to detect played notes in real time.
 - ✅ Random Note Prompting – Dynamically challenges you to find notes on the fretboard.
 - ✅ Multiple Practice Modes:
-- 🎯 Full Fretboard Mode – Find the note anywhere on the guitar.
-- 🎸 By String Mode – Focus on playing the correct note on a specific string.
+    - 🎯 Full Fretboard Mode – Find the note anywhere on the guitar.
+    - 🎸 By String Mode – Focus on playing the correct note on a specific string.
 - ✅ Performance Metrics – Tracks accuracy, speed, and streaks.
 - ✅ Built-in Tuner – Tune your guitar without needing a separate app.
 - ✅ Smart Difficulty Scaling (coming soon!) – Adjusts difficulty based on your accuracy.
@@ -58,9 +45,9 @@ cd FretIQ
 3. Watch your stats to track accuracy, speed, and consistency.
 4. Try to keep a streak! The app will automatically adjust to challenge you.
 
-###🛠 Development Roadmap
+### 🛠 Development Roadmap
 
-####🚀 Planned Features & Updates:
+#### 🚀 Planned Features & Updates:
 - 🎛 Custom Practice Sessions – Choose tunings, scale exercises, and challenges.
 - 🎸 Scale & Chord Training – Train scale patterns and chord voicings.
 - 📊 Advanced Analytics – Track your progress over time with heatmaps.
@@ -74,7 +61,7 @@ We welcome contributions, feedback, and ideas!
 - Found a bug? Open an issue!
 - Have a feature request? Let us know in discussions!
 
-###📜 License
+### 📜 License
 
 FretIQ is open-source and licensed under the MIT License.
 🎸 Happy Practicing! 🚀
